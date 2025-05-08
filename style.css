@@ -258,9 +258,69 @@ p {
 #profile h1:nth-child(2) span {
 	animation-delay: 1.5s;
 }
-
-
 /* End profile Section */
+
+/* art Section */
+#art {
+	background-image: url(./img/art.jpg);
+	background-size: cover;
+	background-position: top center;
+	position: relative;
+	z-index: 1;
+}
+#art::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+	background-color: black;
+	opacity: .7;
+	z-index: -1;
+}
+#art .art {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 50px;
+	justify-content: flex-start;
+}
+#art h1 {
+	display: block;
+	width: fit-content;
+	font-size: 4rem;
+	position: relative;
+	color: transparent;
+	animation: text_reveal .5s ease forwards;
+	animation-delay: 1s;
+}
+#art h1:nth-child(1) {
+	animation-delay: 1s;
+}
+#art h1:nth-child(2) {
+	animation-delay: 2s;
+}
+#art h1:nth-child(3) {
+	animation: text_reveal_name .5s ease forwards;
+	animation-delay: 3s;
+}
+#art h1 span {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 0;
+	background-color: orange;
+	animation: text_reveal_box 1s ease;
+	animation-delay: .5s;
+}
+#art h1:nth-child(1) span {
+	animation-delay: .5s;
+}
+#art h1:nth-child(2) span {
+	animation-delay: 1.5s;
+}
+/* End art Section */
 
 /* Education Section */
 #education .education {
@@ -445,6 +505,54 @@ p {
 }
 /* End About Section */
 
+/* Portfolio Section */
+#portfolio .portfolio {
+	flex-direction: column-reverse;
+	text-align: center;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 100px 20px;
+}
+#portfolio .col-left {
+	width: 250px;
+	height: 360px;
+}
+#portfolio .col-right {
+	width: 100%;
+}
+#portfolio .col-right h2 {
+	font-size: 1.8rem;
+	font-weight: 500;
+	letter-spacing: .2rem;
+	margin-bottom: 10px;
+}
+#portfolio .col-right p {
+	margin-bottom: 20px;
+}
+#portfolio .col-right .cta {
+	color: black;
+	margin-bottom: 50px;
+	padding: 10px 20px;
+	font-size: 2rem;
+}
+#portfolio .col-left .portfolio-img {
+	height: 100%;
+	width: 100%;
+	position: relative;
+	border: 10px solid white;
+}
+#portfolio .col-left .portfolio-img::after {
+	content: '';
+	position: absolute;
+	left: -33px;
+	top: 19px;
+	height: 98%;
+	width: 98%;
+	border: 7px solid orange;
+	z-index: -1;
+}
+/* End portfolio Section */
+
 /* Footer */
 #footer {
 	background-image: linear-gradient(60deg, black 0%, #222222 100%);
@@ -535,6 +643,12 @@ p {
 	}
 	/* End profile */
 
+	/* art */
+	#art h1 {
+		font-size: 7rem;
+	}
+	/* End art */
+
 	/* Education Section */
 	#education .education-bottom .education-item {
 		flex-basis: 45%;
@@ -587,6 +701,31 @@ p {
 		text-align: left;
 	}
 	/* End About */
+
+	/* Portfolio */
+	#portfolio .portfolio {
+		flex-direction: row;
+	}
+	#portfolio .col-left {
+		width: 600px;
+		height: 400px;
+		padding-left: 60px;
+	}
+	#portfolio .portfolio .col-left .portfolio-img::after {
+		left: -45px;
+		top: 34px;
+		height: 98%;
+		width: 98%;
+		border: 10px solid orange;
+	}
+	#portfolio .col-right {
+		text-align: left;
+		padding: 30px;
+	}
+	#portfolio .col-right h1 {
+		text-align: left;
+	}
+	/* End Portfolio */
 
 
 }
