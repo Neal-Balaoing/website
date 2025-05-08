@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rotatable Earth with D3</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    svg { display: block; }
+    .glow-white { stroke: white; stroke-width: 0.8; fill: none; filter: url(#glow); }
+    .glow-orange { stroke: orange; stroke-width: 0.8; fill: none; filter: url(#glow); }
+    .quake-dot { fill: red; opacity: 0.6; stroke: none; }
+    .fiber { stroke: cyan; stroke-width: 0.8; fill: none; filter: url(#glow); }
+  @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.5); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.6; }
+    }
+  </style>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+</head>
+<body>
+  <svg width="100%" height="100%">
+    <defs>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
+  <script>
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    let rotation = [0, 0];
+    let lastPos;
+
+    const projection = d3.geoOrthographic()
+      .scale((Math.min(width, height) / 2.2))
+      .translate([width / 2, height / 2])
+      .rotate(rotation)
+      .clipAngle(90);
+
+    const path = d3.geoPath(projection);
+
+    const svg = d3.select("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    const sphere = {type: "Sphere"};
+
+    svg.append("path")
+      .datum(sphere)
+      .attr("class", "graticule")
+      .attr("fill", "#001")
+      .attr("stroke", "white")
+      .attr("d", path);
+
+    d3.json("https://unpkg.com/world-atlas@2.0.2/countries-110m.json").then(world => {
+      const countries = topojson.feature(world, world.objects.countries);
+
+      svg.append("g")
+        .selectAll("path")
+        .data(countries.features)
+        .enter().append("path")
+        .attr("fill", "gray")
+        .attr("stroke", "#222")
+        .attr("d", path);
+
+      
+      const fiberCables = [
+        {coordinates: [[151.2093, -33.8688], [77.1025, 28.6139]]}, // Sydney to New Delhi
+        {coordinates: [[-46.6333, -23.5505], [-3.7038, 40.4168]]}, // São Paulo to Madrid
+        {coordinates: [[-122.3321, 47.6062], [139.6917, 35.6895]]}, // Seattle to Tokyo
+        {coordinates: [[-122.3321, 47.6062], [126.9780, 37.5665]]}, // Seattle to Seoul
+        {coordinates: [[-74.0060, 40.7128], [0.1276, 51.5074]]},    // New York to London
+        {coordinates: [[-74.0060, 40.7128], [2.3522, 48.8566]]},    // New York to Paris
+        {coordinates: [[55.2708, 25.2048], [151.2093, -33.8688]]},  // Dubai to Sydney
+        {coordinates: [[-122.3321, 47.6062], [-122.4194, 37.7749]]}, // Seattle to San Francisco
+        {coordinates: [[-122.4194, 37.7749], [151.2093, -33.8688]]}  // San Francisco to Sydney
+      ];
+
+      const fiberGroup = svg.append("g").attr("class", "fiber-group");
+
+      function drawFibers() {
+        fiberGroup.selectAll("path.fiber")
+          .data(fiberCables)
+          .join("path")
+          .attr("class", "fiber")
+          .attr("d", d => path({type: "LineString", coordinates: d.coordinates}));
+      }
+
+      drawFibers();
+
+      d3.json("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json")
+        .then(plates => {
+          svg.append("g")
+            .attr("class", "plates-group")
+            .selectAll("path.plates")
+            .data(plates.features)
+            .enter().append("path")
+            .attr("class", "glow-orange")
+            .attr("d", path);
+        });
+
+      d3.json("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson")
+        .then(data => {
+          const quakeGroup = svg.append("g").attr("class", "quake-group");
+
+          const quakes = quakeGroup.selectAll("circle.quake")
+            .data(data.features)
+            .enter()
+            .append("circle")
+            .attr("class", "quake-dot")
+            .attr("r", d => Math.sqrt(d.properties.mag) * 2)
+            .each(function(d) {
+              pulse(d3.select(this), d.properties.mag);
+            })
+            
+
+          function updateQuakes() {
+            quakes.attr("display", d => {
+              const coords = d.geometry.coordinates.slice(0, 2);
+              const rotated = d3.geoRotation(rotation)(coords);
+              return rotated[0] < -90 || rotated[0] > 90 ? "none" : null;
+            }).attr("transform", d => {
+              const coords = projection(d.geometry.coordinates.slice(0, 2));
+              return coords ? `translate(${coords})` : null;
+            });
+          }
+
+          function pulse(dot, mag) {
+            function animate() {
+              dot.transition()
+                .duration(1000 / mag)
+                .attr("r", Math.sqrt(mag) * 3)
+                .transition()
+                .duration(1000 / mag)
+                .attr("r", Math.sqrt(mag) * 2)
+                .on("end", animate);
+            }
+            animate();
+          }
+
+          function updateFibers() {
+            fiberGroup.selectAll("path.fiber")
+              .attr("d", d => path({type: "LineString", coordinates: d.coordinates}));
+          }
+
+          updateQuakes();
+
+          svg.call(d3.drag()
+            .on("start", (event) => {
+              const p = d3.pointer(event);
+              lastPos = [p[0], p[1]];
+            })
+            .on("drag", (event) => {
+              const p = d3.pointer(event);
+              const dx = p[0] - lastPos[0];
+              const dy = p[1] - lastPos[1];
+
+              rotation[0] += dx * 0.2;
+              rotation[1] -= dy * 0.2;
+
+              projection.rotate(rotation);
+
+              svg.selectAll("path")
+                .attr("d", path);
+
+              updateQuakes();
+              updateFibers();
+
+              lastPos = p;
+            })
+          );
+        });
+    });
+  </script>
+</body>
+</html>
